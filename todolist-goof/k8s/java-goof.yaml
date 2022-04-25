@@ -17,7 +17,7 @@ spec:
         app: goof
     spec:
       containers:
-      - image: ${DOCKER_ACCOUNT}/java-goof:latest
+      - image: us-east4-docker.pkg.dev/bizdev-playground/docker-repo/java-goof:latest
         imagePullPolicy: Always
         name: java-goof
       restartPolicy: Always
@@ -29,7 +29,7 @@ metadata:
     app: goof
   name: goof
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 80
       protocol: TCP

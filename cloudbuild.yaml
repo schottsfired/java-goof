@@ -1,0 +1,64 @@
+substitutions:
+    _SNYK_TOKEN: override-me
+    _ORG_ID: team-golf # default value
+    _REMOTE_REPO_URL: cloudbuild/schottsfired/java-goof/todolist-goof
+    _GOOGLE_CLOUD_REGION: us-east4
+    _DOCKER_REPO_NAME: docker-repo
+    _ARTIFACT_BUCKET_NAME: dschott-java-goof
+    _GKE_CLUSTER: goof-gke-cluster
+    # example (with minimal substitutions):
+    # gcloud builds submit --region=us-east4 --config cloudbuild.yaml 
+    # --substitutions=_SNYK_TOKEN=${SNYK_TOKEN},SHORT_SHA=$(git rev-parse --short HEAD) --async
+
+steps:
+
+# use Snyk to check for first-party code, open source dependency, and IaC vulnerabilities
+- name: 'snyk/snyk-cli:maven-3.6.3'
+  entrypoint: bash
+  dir: todolist-goof
+  args:
+    - '-c'
+    - |-
+      snyk config set api=$_SNYK_TOKEN
+      mvn install -DskipTests
+      snyk monitor --all-projects --org=$_ORG_ID --remote-repo-url=$_REMOTE_REPO_URL
+      snyk iac test --org=$_ORG_ID --report .
+      snyk code test --json | snyk-to-html -o snyk-code-report.html
+
+# build the todolist-goof container
+- name: 'gcr.io/cloud-builders/docker'
+  dir: todolist-goof
+  args: [ 'build', '-t', '$_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/docker-repo/java-goof:$SHORT_SHA', '.' ]
+
+# use Snyk to check for container image vulnerabilities
+- name: 'snyk/snyk-cli:docker'
+  entrypoint: bash
+  dir: todolist-goof
+  args:
+    - '-c'
+    - |-
+      snyk config set api=$_SNYK_TOKEN
+      snyk container monitor --org=$_ORG_ID $_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA
+
+# push the todolist-goof container
+- name: 'gcr.io/cloud-builders/docker'
+  dir: todolist-goof
+  args: ['push', '$_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA']
+
+# deploy todolist-goof to GKE
+- name: "gcr.io/cloud-builders/gke-deploy"
+  args:
+  - run
+  - --filename=todolist-goof/k8s/java-goof.yaml
+  - --location=$_GOOGLE_CLOUD_REGION
+  - --cluster=$_GKE_CLUSTER
+  - --image=$_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA
+
+# display the image in build results
+images: ['$_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA']
+
+artifacts:
+  objects:
+    location: 'gs://$_ARTIFACT_BUCKET_NAME'
+    paths: 
+      - 'todolist-goof/snyk-code-report.html'
