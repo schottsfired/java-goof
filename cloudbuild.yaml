@@ -38,7 +38,7 @@ steps:
     - '-c'
     - |-
       snyk config set api=$_SNYK_TOKEN
-      snyk container monitor --org=$_ORG_ID $_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA
+      snyk container monitor --app-vulns --org=$_ORG_ID $_GOOGLE_CLOUD_REGION-docker.pkg.dev/$PROJECT_ID/$_DOCKER_REPO_NAME/java-goof:$SHORT_SHA
 
 # push the todolist-goof container
 - name: 'gcr.io/cloud-builders/docker'
