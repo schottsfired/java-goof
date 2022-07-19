@@ -23,7 +23,7 @@ steps:
       mvn install -DskipTests
       snyk monitor --all-projects --org=$_ORG_ID --remote-repo-url=$_REMOTE_REPO_URL
       snyk iac test --org=$_ORG_ID --report .
-      snyk code test --json | snyk-to-html -o snyk-code-report.html
+      snyk code test --org=$_ORG_ID --json | snyk-to-html -o snyk-code-report.html
 
 # build the todolist-goof container
 - name: 'gcr.io/cloud-builders/docker'
