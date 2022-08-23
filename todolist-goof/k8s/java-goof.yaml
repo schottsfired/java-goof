@@ -5,7 +5,7 @@ metadata:
   labels:
     app: goof
   name: goof
-  namespace: default
+  namespace: java-goof
 spec:
   replicas: 1
   selector:
@@ -17,9 +17,11 @@ spec:
         app: goof
     spec:
       containers:
-      - image: ${DOCKER_ACCOUNT}/java-goof:latest
+      - image: 478468688580.dkr.ecr.us-east-1.amazonaws.com/java-goof:latest
         imagePullPolicy: Always
         name: java-goof
+        securityContext:
+          privileged: true
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -29,7 +31,7 @@ metadata:
     app: goof
   name: goof
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 80
       protocol: TCP
