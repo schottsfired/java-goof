@@ -6,6 +6,9 @@
 trigger:
 - azure-pipelines
 
+variables:
+  SNYK_API: http://api.us.snyk.io/
+
 pool:
   vmImage: ubuntu-latest
 
@@ -26,4 +29,6 @@ steps:
     testType: 'app'
     monitorWhen: 'never'
     failOnIssues: false
-    additionalArguments: '--all-projects'
+    additionalArguments: '--all-projects -d'
+  env:
+    SNYK_API: '$(SNYK_API)'
